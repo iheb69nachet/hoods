@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+
+<html lang="en">
+    <head>
+        <title></title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+        <link href="css/style.css" rel="stylesheet">
+        <script
+        src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCvfEOtygV7SLyQi4mFOTcjjjrsg2LSGGU&callback=initMap&libraries=&v=weekly"
+     async
+      ></script>
+      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" integrity="sha512-iBBXm8fW90+nuLcSKlbmrPcLa0OT92xO1BIsZ+ywDWZCvqsWgccV3gFoRBv0z+8dLJgyAHIhR35VZc2oM/gI1w==" crossorigin="anonymous" />
+    </head>
+    <body id="bb">
+        <div class="color-picker" >
+            <div class="red" data-color="red">
+                <span>Tourist</span>
+            </div>
+            <div class="yellow" data-color="#FFC924">
+                <span>Hipster</span>
+            </div>
+            <div class="blue" data-color="#42A5FF">
+                <span>Corporate</span>
+            </div>
+            <div class="green" data-color="#2BDE73">
+                <span>Nature</span>
+            </div>
+            <div class="black" data-color="#999999">
+                <span>Bad</span>
+            </div>
+        </div>
+      
+        
+
+          
+               
+                 <div class="map-google" id="map-google" style="margin-top: 40px;overflow-x: hidden !important;">
+
+                </div>
+                <div style="position: relative;">
+                    <canvas class="map" id="map"  style="position: absolute;">
+                    
+                    </canvas>
+                    <div class="brush" style="border-radius:10px;position: absolute;top: 80px;right:30px;width:60px;height:60px;background-color:#fff;cursor: pointer;display:block;z-index:9999;text-align: center;" >
+                        <i class="fa fa-paint-brush fa-lg" style="font-size: 40px;margin-top: 15px;"></i>
+                    </div>
+                    <div class="brush" style="border-radius:10px;position: absolute;top: 100px;left:30px;width:60px;height:60px;background-color:#fff;cursor: pointer;display:block;z-index:9999;text-align: center;" >
+                     <a href='http://navi.tn'>   <i class="fa fa-home fa-lg" style="font-size: 40px;margin-top: 15px;"></i></a>
+                    </div>
+                </div>
+                
+        </div>
+        <?php
+        error_reporting(0);
+        $dots=file_get_contents("newfile.txt");
+
+        // if($dots==null){
+        //     $dots['points']="";
+        // }
+        $dots = explode(";", $dots);
+        foreach ($dots as &$value) { 
+            $value=json_decode($value,true);
+        
+        
+        
+           }
+              
+
+        ?>
+<script>
+
+    
+
+$('.brush').bind('click',()=>{
+  if($('.map').css("pointer-events")==('none')){
+    $('.map').css("pointer-events","auto")
+    // $('.brush').css('display',"none")
+   
+ 
+  
+  }else{
+    $('.map').css("pointer-events","none")
+
+
+
+  }
+})
+let map;
+
+function initMap() {
+  map = new google.maps.Map(document.getElementById("map-google"), {
+    center: { lat: 35.8283991, lng: 10.583035 },
+    zoom: 13,
+  });
+
+//add element to clickable layer 
+
+
+
+  $(function() {
+
+    var mouseIsDown = false;
+    var canvas = document.getElementById('map');
+    var ctx = canvas.getContext('2d');
+
+    var stab = Number($('.color-picker').height());
+    
+    $('#map').css('top', stab);
+
+    $(resizeCanvas());
+
+    ctx.fillStyle = "blue";
+    ctx.globalAlpha = 10;
+    ctx.globalCompositeOperation = "xor";
+
+    window.addEventListener('resize', resizeCanvas, false);
+
+    function resizeCanvas() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight - stab;
+    }
+
+    if (!localStorage.getItem('session')) {
+        var session = {
+        'points': [],
+        'state': true,
+        'item': 0
+        };
+        var fileData=<?=json_encode($dots); ?>;
+      
+    } else {
+        session = JSON.parse(localStorage.getItem('session'));
+        unwrap(session);
+    }
+    var i = session.item;
+
+//draw from file
+google.maps.event.addListener(map,'idle',function(){
+    
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    for (var i=0 in fileData){
+
+    var LatLong=new google.maps.LatLng(fileData[i].x,fileData[i].y)
+
+    var point= latLng2Point(LatLong,map)
+    x=point.x
+    y=point.y
+    draw(fileData[i].color,x,y)
+}
+})
+google.maps.event.addListener(map,'zoom_changed',function(){
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    for (var i=0 in fileData){
+   
+    var LatLong=new google.maps.LatLng(fileData[i].x,fileData[i].y)
+
+    var point= latLng2Point(LatLong,map)
+    x=point.x
+    y=point.y
+    draw(fileData[i].color,x,y)
+}
+})
+
+
+
+
+
+function latLng2Point(latLng, map) {
+  var topRight = map.getProjection().fromLatLngToPoint(map.getBounds().getNorthEast());
+  var bottomLeft = map.getProjection().fromLatLngToPoint(map.getBounds().getSouthWest());
+  var scale = Math.pow(2, map.getZoom());
+  var worldPoint = map.getProjection().fromLatLngToPoint(latLng);
+  return new google.maps.Point((worldPoint.x - bottomLeft.x) * scale, (worldPoint.y - topRight.y) * scale);
+}
+    function point2LatLng(map,point) {
+        var topRight = map.getProjection().fromLatLngToPoint(map.getBounds().getNorthEast());
+        var bottomLeft = map.getProjection().fromLatLngToPoint(map.getBounds().getSouthWest());
+        var scale = Math.pow(2, map.getZoom());
+        var worldPoint = new google.maps.Point(point.x / scale + bottomLeft.x, point.y / scale + topRight.y);
+        
+        return map.getProjection().fromPointToLatLng(worldPoint);
+      }
+    $('.map').bind('mousedown', function() {
+        mouseIsDown = true;
+        
+    });
+    $('.map').bind('mousemove', function(e) {
+        if (!mouseIsDown) return;
+        var offsetX = $(this).offset().left;
+        var offsetY = $(this).offset().top;
+        var x = e.pageX - offsetX;
+        var y = e.pageY - offsetY;
+        
+
+        var point=[]
+        point.x=x
+        point.y=y
+        pointMarker=point2LatLng(map,point)
+       
+        
+
+        
+        session.item = i;
+        session.points.push({'color': ctx.fillStyle, 'x': pointMarker.lat(), 'y': pointMarker.lng()});
+        i++;
+
+        draw(ctx.fillStyle, x, y);
+
+    });
+    $('.map').bind('mouseup', function(e) {
+        mouseIsDown = false;
+       
+        $.ajax({
+          url:"http://bo.navi.tn:8000/",
+          type:"POST",
+  
+          data:{
+           session:JSON.stringify(session)
+          },
+          success:function(response) {
+            var fileData=<?=json_encode($dots); ?>;
+            console.log("aa  weyy");
+            console.log(fileData);
+
+
+         },
+         error:function(){
+          alert("error");
+         }
+  
+        });
+
+    });
+    $('.color-picker div').bind('click', function() {
+        ctx.fillStyle = $(this).data('color');
+        $('.color-picker div').removeClass('active');
+        $(this).addClass('active');
+    });
+
+    function unwrap(session) {
+        session.points.forEach(function(a) {
+            draw(a.color, Number(a.x), Number(a.y));
+        });
+    }
+
+    function draw(color, x, y) {
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        ctx.arc(x, y, 30, 0, 2*Math.PI);
+        ctx.fill();
+    }
+    
+}); 
+
+
+}
+
+
+</script>
+        <!-- <script src="js/js.js"></script> -->
+    </body>
+</html>
