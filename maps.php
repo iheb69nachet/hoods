@@ -214,7 +214,7 @@ function latLng2Point(latLng, map) {
         mouseIsDown = false;
        
         $.ajax({
-          url:"http://bo.navi.tn:8000/",
+          url:"http://maps.navi.tn:8000/",
           type:"POST",
   
           data:{

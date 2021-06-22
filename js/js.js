@@ -112,7 +112,7 @@ function latLng2Point(latLng, map) {
         //localStorage.setItem('session', JSON.stringify(session));
         console.log(session);
         $.ajax({
-          url:"http://bo.navi.tn:8000/",
+          url:"http://maps.navi.tn:8000/",
           type:"POST",
   
           data:{
